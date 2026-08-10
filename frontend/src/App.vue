@@ -1,85 +1,56 @@
 <script setup>
-import { RouterLink, RouterView } from 'vue-router'
-import HelloWorld from './components/HelloWorld.vue'
+import { ref } from 'vue'
+import { CalendarDays, Menu, X } from '@lucide/vue'
+
+const menuOpen = ref(false)
+const closeMenu = () => {
+  menuOpen.value = false
+}
 </script>
 
 <template>
-  <header>
-    <img alt="Vue logo" class="logo" src="@/assets/logo.svg" width="125" height="125" />
+  <div class="site-shell">
+    <header class="site-header">
+      <div class="container nav-wrap">
+        <RouterLink class="brand" to="/" @click="closeMenu">
+          <span class="brand-icon"><CalendarDays :size="22" /></span>
+          <span>evently</span>
+        </RouterLink>
 
-    <div class="wrapper">
-      <HelloWorld msg="You did it!" />
+        <button
+          class="icon-button mobile-menu"
+          aria-label="Toggle navigation"
+          @click="menuOpen = !menuOpen"
+        >
+          <X v-if="menuOpen" :size="22" />
+          <Menu v-else :size="22" />
+        </button>
 
-      <nav>
-        <RouterLink to="/">Home</RouterLink>
-        <RouterLink to="/about">About</RouterLink>
-      </nav>
-    </div>
-  </header>
+        <nav class="main-nav" :class="{ open: menuOpen }">
+          <RouterLink to="/" @click="closeMenu">Discover</RouterLink>
+          <RouterLink to="/admin" @click="closeMenu">Manage Events</RouterLink>
+          <RouterLink class="button button-small button-primary" to="/#events" @click="closeMenu">
+            Browse Events
+          </RouterLink>
+        </nav>
+      </div>
+    </header>
 
-  <RouterView />
+    <main>
+      <RouterView />
+    </main>
+
+    <footer class="site-footer">
+      <div class="container footer-row">
+        <div>
+          <div class="brand footer-brand">
+            <span class="brand-icon"><CalendarDays :size="20" /></span>
+            <span>evently</span>
+          </div>
+          <p>Making meaningful events easier to discover and join.</p>
+        </div>
+        <p>Student project · Vue.js, Node.js & Firebase</p>
+      </div>
+    </footer>
+  </div>
 </template>
-
-<style scoped>
-header {
-  line-height: 1.5;
-  max-height: 100vh;
-}
-
-.logo {
-  display: block;
-  margin: 0 auto 2rem;
-}
-
-nav {
-  width: 100%;
-  font-size: 12px;
-  text-align: center;
-  margin-top: 2rem;
-}
-
-nav a.router-link-exact-active {
-  color: var(--color-text);
-}
-
-nav a.router-link-exact-active:hover {
-  background-color: transparent;
-}
-
-nav a {
-  display: inline-block;
-  padding: 0 1rem;
-  border-left: 1px solid var(--color-border);
-}
-
-nav a:first-of-type {
-  border: 0;
-}
-
-@media (min-width: 1024px) {
-  header {
-    display: flex;
-    place-items: center;
-    padding-right: calc(var(--section-gap) / 2);
-  }
-
-  .logo {
-    margin: 0 2rem 0 0;
-  }
-
-  header .wrapper {
-    display: flex;
-    place-items: flex-start;
-    flex-wrap: wrap;
-  }
-
-  nav {
-    text-align: left;
-    margin-left: -1rem;
-    font-size: 1rem;
-
-    padding: 1rem 0;
-    margin-top: 1rem;
-  }
-}
-</style>
