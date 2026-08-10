@@ -49,7 +49,7 @@ const closeMenu = () => {
           </div>
           <p>Making meaningful events easier to discover and join.</p>
         </div>
-        <p>Student project · Vue.js, Node.js & Firebase</p>
+        <p>Rijan's Project · Para makaalis na sa College</p>
       </div>
     </footer>
   </div>

@@ -12,6 +12,11 @@ const search = ref('')
 const category = ref('All')
 const categories = ['All', 'Technology', 'Education', 'Business', 'Community', 'Arts', 'Other']
 
+function clearFilters() {
+  search.value = ''
+  category.value = 'All'
+}
+
 const upcomingEvents = computed(() =>
   events.value.filter((event) => new Date(event.date) >= new Date().setHours(0, 0, 0, 0)),
 )
@@ -120,15 +125,7 @@ onMounted(async () => {
         <Search :size="30" />
         <h3>No matching events yet</h3>
         <p>Try a different search term or category.</p>
-        <button
-          class="text-link"
-          @click="
-            search = ''
-            category = 'All'
-          "
-        >
-          Clear filters
-        </button>
+        <button class="text-link" @click="clearFilters">Clear filters</button>
       </div>
     </div>
   </section>
