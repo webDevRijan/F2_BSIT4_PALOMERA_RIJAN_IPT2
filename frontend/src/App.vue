@@ -1,6 +1,7 @@
 <script setup>
 import { ref } from 'vue'
 import { CalendarDays, Menu, X } from '@lucide/vue'
+import ThemeToggle from './components/ThemeToggle.vue'
 
 const menuOpen = ref(false)
 const closeMenu = () => {
@@ -32,6 +33,7 @@ const closeMenu = () => {
           <RouterLink class="button button-small button-primary" to="/#events" @click="closeMenu">
             Browse Events
           </RouterLink>
+          <ThemeToggle />
         </nav>
       </div>
     </header>
