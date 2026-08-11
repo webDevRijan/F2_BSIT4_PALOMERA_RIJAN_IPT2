@@ -26,6 +26,16 @@ const router = createRouter({
       name: 'admin',
       component: () => import('../views/AdminView.vue'),
     },
+    {
+      path: '/login',
+      name: 'login',
+      component: () => import('../views/AuthView.vue'),
+    },
+    {
+      path: '/register-account',
+      name: 'account-register',
+      component: () => import('../views/AuthView.vue'),
+    },
     { path: '/:pathMatch(.*)*', redirect: '/' },
   ],
 })

@@ -15,6 +15,7 @@
   "dependencies": {
     "@lucide/vue": "^1.31.0",
     "axios": "^1.19.0",
+    "firebase": "^12.17.1",
     "vue": "^3.5.40",
     "vue-router": "^5.2.0"
   },
