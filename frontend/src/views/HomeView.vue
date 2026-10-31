@@ -10,7 +10,16 @@ const loading = ref(true)
 const error = ref('')
 const search = ref('')
 const category = ref('All')
-const categories = ['All', 'Technology', 'Education', 'Business', 'Community', 'Arts', 'Other']
+const categories = [
+  'All',
+  'Technology',
+  'Education',
+  'Business',
+  'Community',
+  'Arts',
+  'Other',
+  'Test',
+]
 
 function clearFilters() {
   search.value = ''
