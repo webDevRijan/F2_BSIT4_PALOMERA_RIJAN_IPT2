@@ -8,6 +8,8 @@ const api = axios.create({
 export const getEvents = () => api.get('/events').then(({ data }) => data)
 export const getEvent = (id) => api.get(`/events/${id}`).then(({ data }) => data)
 export const createEvent = (formData) => api.post('/events', formData).then(({ data }) => data)
+export const updateEvent = (id, formData) =>
+  api.put(`/events/${id}`, formData).then(({ data }) => data)
 export const deleteEvent = (id) => api.delete(`/events/${id}`)
 export const getRegistrations = (id) =>
   api.get(`/events/${id}/registrations`).then(({ data }) => data)

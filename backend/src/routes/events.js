@@ -168,6 +168,39 @@ router.post("/", upload.single("cover"), async (req, res, next) => {
   }
 });
 
+router.put("/:eventId", upload.single("cover"), async (req, res, next) => {
+  try {
+    const reference = db.collection("events").doc(req.params.eventId);
+    const document = await reference.get();
+    if (!document.exists)
+      return res.status(404).json({ message: "Event not found." });
+
+    const event = validateEvent(req.body);
+    const registeredCount = document.data().registeredCount || 0;
+    if (event.capacity < registeredCount) {
+      return res.status(400).json({
+        message: `Capacity cannot be lower than the ${registeredCount} current registration${registeredCount === 1 ? "" : "s"}.`,
+      });
+    }
+    const cover = await uploadCover(req.file);
+    const previousCoverPath = document.data().coverPath;
+    await reference.update({
+      ...event,
+      registeredCount,
+      ...(cover || {}),
+      updatedAt: FieldValue.serverTimestamp(),
+    });
+
+    if (cover && previousCoverPath)
+      await bucket.file(previousCoverPath).delete({ ignoreNotFound: true });
+
+    const updated = await reference.get();
+    res.json(serializeDocument(updated));
+  } catch (error) {
+    next(error);
+  }
+});
+
 router.delete("/:eventId", async (req, res, next) => {
   try {
     const reference = db.collection("events").doc(req.params.eventId);

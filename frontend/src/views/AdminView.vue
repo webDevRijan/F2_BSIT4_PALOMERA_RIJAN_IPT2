@@ -5,6 +5,7 @@ import {
   CheckCircle2,
   ImagePlus,
   ListFilter,
+  Pencil,
   Plus,
   RefreshCw,
   Search,
@@ -21,6 +22,7 @@ import {
   getErrorMessage,
   getEvents,
   getRegistrations,
+  updateEvent,
 } from '../services/api'
 
 const events = ref([])
@@ -29,6 +31,7 @@ const saving = ref(false)
 const error = ref('')
 const success = ref('')
 const showForm = ref(false)
+const editingEvent = ref(null)
 const selectedEvent = ref(null)
 const registrations = ref([])
 const loadingRegistrations = ref(false)
@@ -81,14 +84,43 @@ async function loadEvents() {
 function chooseCover(event) {
   const file = event.target.files[0]
   if (!file) return
+  if (coverPreview.value.startsWith('blob:')) URL.revokeObjectURL(coverPreview.value)
   form.cover = file
   coverPreview.value = URL.createObjectURL(file)
 }
 
 function resetForm() {
   Object.assign(form, emptyForm())
+  if (coverPreview.value.startsWith('blob:')) URL.revokeObjectURL(coverPreview.value)
   coverPreview.value = ''
   if (coverInput.value) coverInput.value.value = ''
+}
+
+function closeForm() {
+  showForm.value = false
+  editingEvent.value = null
+  resetForm()
+}
+
+function beginEdit(event) {
+  resetForm()
+  editingEvent.value = event
+  Object.assign(form, {
+    title: event.title,
+    description: event.description,
+    date: new Date(event.date).toISOString().slice(0, 10),
+    time: event.time,
+    venue: event.venue,
+    category: event.category,
+    organizer: event.organizer,
+    capacity: event.capacity,
+    cover: null,
+  })
+  coverPreview.value = event.coverUrl || ''
+  showForm.value = true
+  error.value = ''
+  success.value = ''
+  window.scrollTo({ top: 0, behavior: 'smooth' })
 }
 
 async function submitEvent() {
@@ -100,10 +132,14 @@ async function submitEvent() {
     if (value !== null && value !== '') payload.append(key, value)
   })
   try {
-    await createEvent(payload)
-    success.value = 'Event published successfully.'
-    showForm.value = false
-    resetForm()
+    if (editingEvent.value) {
+      await updateEvent(editingEvent.value.id, payload)
+      success.value = 'Event updated successfully.'
+    } else {
+      await createEvent(payload)
+      success.value = 'Event published successfully.'
+    }
+    closeForm()
     await loadEvents()
   } catch (requestError) {
     error.value = getErrorMessage(requestError)
@@ -158,7 +194,7 @@ onMounted(loadEvents)
           <h1>Manage your events</h1>
           <p>Create experiences, review attendance, and keep registration organized.</p>
         </div>
-        <button class="button button-primary" @click="showForm = !showForm">
+        <button class="button button-primary" @click="showForm ? closeForm() : (showForm = true)">
           <X v-if="showForm" :size="19" /><Plus v-else :size="19" />{{
             showForm ? 'Close form' : 'Create event'
           }}
@@ -174,8 +210,14 @@ onMounted(loadEvents)
         <div class="panel-heading">
           <div class="panel-icon"><CalendarDays :size="22" /></div>
           <div>
-            <h2>Publish a new event</h2>
-            <p>Complete the details people need before registering.</p>
+            <h2>{{ editingEvent ? 'Edit event' : 'Publish a new event' }}</h2>
+            <p>
+              {{
+                editingEvent
+                  ? 'Update the event details shown to attendees.'
+                  : 'Complete the details people need before registering.'
+              }}
+            </p>
           </div>
         </div>
         <form class="admin-form" @submit.prevent="submitEvent">
@@ -219,7 +261,7 @@ onMounted(loadEvents)
                 id="capacity"
                 v-model.number="form.capacity"
                 type="number"
-                min="1"
+                :min="editingEvent ? Math.max(1, editingEvent.registeredCount || 0) : 1"
                 max="100000"
                 required
               />
@@ -263,9 +305,17 @@ onMounted(loadEvents)
             </div>
           </div>
           <div class="form-actions">
-            <button type="button" class="button button-ghost" @click="resetForm">Clear</button
+            <button type="button" class="button button-ghost" @click="closeForm">Cancel</button
             ><button class="button button-primary" :disabled="saving">
-              {{ saving ? 'Publishing...' : 'Publish event' }}
+              {{
+                saving
+                  ? editingEvent
+                    ? 'Saving...'
+                    : 'Publishing...'
+                  : editingEvent
+                    ? 'Save changes'
+                    : 'Publish event'
+              }}
             </button>
           </div>
         </form>
@@ -349,6 +399,14 @@ onMounted(loadEvents)
                   >
                 </td>
                 <td>
+                  <button
+                    class="icon-button"
+                    title="Edit event"
+                    aria-label="Edit event"
+                    @click="beginEdit(event)"
+                  >
+                    <Pencil :size="18" />
+                  </button>
                   <button
                     class="icon-button danger"
                     title="Delete event"
