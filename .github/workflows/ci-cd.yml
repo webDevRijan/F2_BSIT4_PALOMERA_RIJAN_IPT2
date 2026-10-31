@@ -62,7 +62,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Prepare Firebase environment
-        shell: pwsh
+        shell: powershell
         env:
           FIREBASE_PROJECT_ID: ${{ secrets.FIREBASE_PROJECT_ID }}
           FIREBASE_CLIENT_EMAIL: ${{ secrets.FIREBASE_CLIENT_EMAIL }}
@@ -98,7 +98,7 @@ jobs:
           )
 
       - name: Deploy Evently with Docker Compose
-        shell: pwsh
+        shell: powershell
         run: |
           $env:COMPOSE_PROJECT_NAME = "githubactions"
 
@@ -109,7 +109,7 @@ jobs:
           }
 
       - name: Verify deployment
-        shell: pwsh
+        shell: powershell
         run: |
           $env:COMPOSE_PROJECT_NAME = "githubactions"
 
@@ -148,6 +148,6 @@ jobs:
 
       - name: Remove temporary environment file
         if: always()
-        shell: pwsh
+        shell: powershell
         run: |
           Remove-Item ".env" -Force -ErrorAction SilentlyContinue
