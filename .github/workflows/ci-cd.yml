@@ -1,0 +1,153 @@
+
+name: Evently CI/CD Pipeline
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  ci:
+    name: Continuous Integration
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22.18.0"
+
+      - name: Install backend dependencies
+        working-directory: backend
+        run: npm ci
+
+      - name: Check backend JavaScript
+        working-directory: backend
+        run: npm run check
+
+      - name: Install frontend dependencies
+        working-directory: frontend
+        run: npm ci
+
+      - name: Run Oxlint
+        working-directory: frontend
+        run: npx oxlint .
+
+      - name: Run ESLint
+        working-directory: frontend
+        run: npx eslint .
+
+      - name: Build frontend
+        working-directory: frontend
+        run: npm run build
+
+  cd:
+    name: Continuous Deployment
+    needs: ci
+    if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
+    runs-on: [self-hosted, Windows, X64, evently]
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Prepare Firebase environment
+        shell: pwsh
+        env:
+          FIREBASE_PROJECT_ID: ${{ secrets.FIREBASE_PROJECT_ID }}
+          FIREBASE_CLIENT_EMAIL: ${{ secrets.FIREBASE_CLIENT_EMAIL }}
+          FIREBASE_PRIVATE_KEY: ${{ secrets.FIREBASE_PRIVATE_KEY }}
+          FIREBASE_STORAGE_BUCKET: ${{ secrets.FIREBASE_STORAGE_BUCKET }}
+        run: |
+          $required = @(
+            "FIREBASE_PROJECT_ID",
+            "FIREBASE_CLIENT_EMAIL",
+            "FIREBASE_PRIVATE_KEY"
+          )
+
+          foreach ($name in $required) {
+            if ([string]::IsNullOrWhiteSpace((Get-Item "Env:$name").Value)) {
+              throw "Required GitHub secret is missing: $name"
+            }
+          }
+
+          $privateKey = $env:FIREBASE_PRIVATE_KEY -replace "`r?`n", '\n'
+
+          $content = @(
+            "FIREBASE_PROJECT_ID=$env:FIREBASE_PROJECT_ID"
+            "FIREBASE_CLIENT_EMAIL=$env:FIREBASE_CLIENT_EMAIL"
+            "FIREBASE_PRIVATE_KEY=$privateKey"
+            "FIREBASE_STORAGE_BUCKET=$env:FIREBASE_STORAGE_BUCKET"
+          ) -join "`n"
+
+          $encoding = New-Object System.Text.UTF8Encoding($false)
+          [System.IO.File]::WriteAllText(
+            (Join-Path $PWD ".env"),
+            $content,
+            $encoding
+          )
+
+      - name: Deploy Evently with Docker Compose
+        shell: pwsh
+        run: |
+          $env:COMPOSE_PROJECT_NAME = "githubactions"
+
+          docker compose up -d --build --remove-orphans
+
+          if ($LASTEXITCODE -ne 0) {
+            throw "Docker Compose deployment failed."
+          }
+
+      - name: Verify deployment
+        shell: pwsh
+        run: |
+          $env:COMPOSE_PROJECT_NAME = "githubactions"
+
+          docker compose ps
+
+          $checks = @(
+            "http://localhost:3001/api/events",
+            "http://localhost:8080"
+          )
+
+          foreach ($url in $checks) {
+            $success = $false
+
+            for ($attempt = 1; $attempt -le 12; $attempt++) {
+              try {
+                $response = Invoke-WebRequest `
+                  -Uri $url `
+                  -UseBasicParsing `
+                  -TimeoutSec 10
+
+                if ($response.StatusCode -ge 200 -and $response.StatusCode -lt 400) {
+                  Write-Host "Verified: $url"
+                  $success = $true
+                  break
+                }
+              }
+              catch {
+                Start-Sleep -Seconds 5
+              }
+            }
+
+            if (-not $success) {
+              throw "Deployment verification failed: $url"
+            }
+          }
+
+      - name: Remove temporary environment file
+        if: always()
+        shell: pwsh
+        run: |
+          Remove-Item ".env" -Force -ErrorAction SilentlyContinue
