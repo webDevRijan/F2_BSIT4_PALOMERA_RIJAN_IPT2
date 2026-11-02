@@ -50,7 +50,7 @@ onMounted(async () => {
     <div class="hero-orb orb-two"></div>
     <div class="container hero-grid">
       <div class="hero-copy">
-        <span class="eyebrow"><Sparkles :size="16" /> Experiences worth showing up for</span>
+        <span class="eyebrow"><Sparkles :size="16" /> Test Experiences worth showing up for</span>
         <h1>Find your next <span class="gradient-text">meaningful event.</span></h1>
         <p>
           Discover workshops, meetups, and community gatherings around you—then reserve your seat in
