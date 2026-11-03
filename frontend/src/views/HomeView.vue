@@ -51,7 +51,7 @@ onMounted(async () => {
     <div class="container hero-grid">
       <div class="hero-copy">
         <span class="eyebrow"><Sparkles :size="16" /> Test Experiences worth showing up for</span>
-        <h1>Find your next <span class="gradient-text">meaningful event.</span></h1>
+        <h1>Find your next <span class="gradient-text">meaningful event V3.</span></h1>
         <p>
           Discover workshops, meetups, and community gatherings around you—then reserve your seat in
           just a few clicks.
